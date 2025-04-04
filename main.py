@@ -23,7 +23,7 @@ async def chat(request: ChatRequest):
         summary = summarize_conversation(request.content)
         if response is None:
             raise HTTPException(status_code=500, detail="No response generated.")
-        
+
         return {"response": response}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -39,13 +39,16 @@ async def summarize(request: SummaryRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/upload")
 async def upload(file: UploadFile = File(...)):
     return upload_audio(file)
 
+
 @app.get("/download/{filename}")
 async def download(filename: str):
     return download_audio(filename)
+
 
 @app.get("/")
 async def root():

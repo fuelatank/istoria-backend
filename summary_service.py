@@ -1,6 +1,8 @@
-
 from sqlalchemy.orm import Session
-from models import Summary  # Assuming you have a Summary model defined in your models.py
+from models import (
+    Summary,
+)  # Assuming you have a Summary model defined in your models.py
+
 
 def record_summary_to_db(db: Session, summary_data: dict):
     """
