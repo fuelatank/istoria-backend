@@ -1,7 +1,12 @@
 import argparse
 import sys
 import io
-from openai import OpenAI  
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
 
 # 设置标准输出的编码为UTF-8
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -14,7 +19,7 @@ args = parser.parse_args()
 # 使用命令行参数获取内容
 Input_Content = args.content
 
-client = OpenAI(api_key="sk-hwkrjogftejgxfkimtgksneefvfjadbrgxetfszemcbuchbk", base_url="https://api.siliconflow.cn/v1")  
+client = OpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1")  
 
 response = client.chat.completions.create(  
     model="deepseek-ai/DeepSeek-V3",  

@@ -1,6 +1,11 @@
 import sys
 import io
+import os
+from dotenv import load_dotenv
 from openai import OpenAI  
+
+load_dotenv()
+api_key = os.getenv("OPENAI_API_KEY")
 
 # 设置标准输出的编码为UTF-8
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
@@ -13,7 +18,7 @@ except Exception as e:
     print(f"读取preferences.txt时出错：{str(e)}")
     sys.exit(1)
 
-client = OpenAI(api_key="sk-hwkrjogftejgxfkimtgksneefvfjadbrgxetfszemcbuchbk", base_url="https://api.siliconflow.cn/v1")  
+client = OpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1")  
 
 response = client.chat.completions.create(  
     model="deepseek-ai/DeepSeek-V3",  
