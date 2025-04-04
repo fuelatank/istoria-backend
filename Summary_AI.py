@@ -1,30 +1,21 @@
-import argparse
-import sys
-import io
+import re
 import os
 from dotenv import load_dotenv
-from openai import OpenAI  
+from openai import OpenAI
 
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
-# 设置标准输出的编码为UTF-8
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
-# 解析命令行参数
-parser = argparse.ArgumentParser()
-parser.add_argument('--content', type=str, required=True, help='要处理的内容')
-args = parser.parse_args()
+def summarize_conversation(conversation: str) -> dict[str, str]:
+    client = OpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1")
 
-# 使用命令行参数获取内容
-Input_Content = args.content
-
-client = OpenAI(api_key=api_key, base_url="https://api.siliconflow.cn/v1")  
-
-response = client.chat.completions.create(  
-    model="deepseek-ai/DeepSeek-V3",  
-    messages=[  
-        {"role": "system", "content": """
+    response = client.chat.completions.create(
+        model="deepseek-ai/DeepSeek-V3",
+        messages=[
+            {
+                "role": "system",
+                "content": """
 # 角色
 你是一个专注于处理老年人记忆和故事口述文本的智能体，能够将这些文本转化为条理清晰的历史资料，精准提取其中的标签和关键词，并在不改变原意的基础上优化讲述逻辑。
 
@@ -49,7 +40,7 @@ response = client.chat.completions.create(
 =====
 关键词：[关键词 1]、[关键词 2]、[关键词 3]
 =====
-         
+
 ### 技能3：总结老人身份和偏好
 1. 从地域、身份、工作等方面总结老人身份。
 2. 从老人可能喜欢的真实故事类型、故事内容等方面总结老人偏好。
@@ -65,14 +56,53 @@ response = client.chat.completions.create(
 - 所输出的内容必须按照给定的格式进行组织，不能偏离框架要求。
 - 优化讲述逻辑时，绝对不能改变原意。
 - 禁止输出 emoji 及非 UTF-8 字符。
-"""},  
-        {"role": "user", "content": Input_Content}  
-    ],  
-    temperature=0.7,  
-    max_tokens=1024,
-    stream=False  # 改为非流式输出
-)  
+""",
+            },
+            {"role": "user", "content": conversation},
+        ],
+        temperature=0.7,
+        max_tokens=1024,
+        stream=False,  # 改为非流式输出
+    )
 
-# 直接输出完整响应
-if response.choices and response.choices[0].message.content:
-    print(response.choices[0].message.content)
+    # 直接输出完整响应
+    if response.choices and response.choices[0].message.content:
+
+        output = response.choices[0].message.content
+
+        print("\n总结结果：")
+        print(output)
+
+        # 提取并保存不同部分的内容
+        result = {}
+
+        # 历史资料内容
+        history_match = re.search(
+            r"=====\n历史资料内容：(.*?)\n=====", output, re.DOTALL
+        )
+        if history_match:
+            result["history_content"] = history_match.group(1).strip()
+
+        # 标签
+        tags_match = re.search(r"=====\n标签：(.*?)\n=====", output, re.DOTALL)
+        if tags_match:
+            result["tags"] = tags_match.group(1).strip()
+
+        # 关键词
+        keywords_match = re.search(r"=====\n关键词：(.*?)\n=====", output, re.DOTALL)
+        if keywords_match:
+            result["keywords"] = keywords_match.group(1).strip()
+
+        # 老人身份
+        identity_match = re.search(r"=====\n老人身份：(.*?)\n=====", output, re.DOTALL)
+        if identity_match:
+            result["identity"] = identity_match.group(1).strip()
+
+        # 老人偏好
+        preferences_match = re.search(
+            r"=====\n老人偏好：(.*?)\n=====", output, re.DOTALL
+        )
+        if preferences_match:
+            result["preferences"] = preferences_match.group(1).strip()
+
+        return result
