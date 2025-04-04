@@ -1,11 +1,23 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from Chat_AI import generate_chat_response
 from Summary_AI import summarize_conversation
+from db import SessionDep, init_db
 from file_service import download_audio, upload_audio
+from summary_service import record_summary_to_db
 
-app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup logic
+    init_db()
+    yield
+    # Shutdown logic (if needed)
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 class ChatRequest(BaseModel):
@@ -17,10 +29,13 @@ class SummaryRequest(BaseModel):
 
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+async def chat(request: ChatRequest, session: SessionDep):
     try:
         response = generate_chat_response(request.content)
         summary = summarize_conversation(request.content)
+
+        record_summary_to_db(session, summary)
+
         if response is None:
             raise HTTPException(status_code=500, detail="No response generated.")
 
