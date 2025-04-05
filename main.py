@@ -1,12 +1,21 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, File, HTTPException, UploadFile
+import logging
+from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket
 from pydantic import BaseModel
 
-from Chat_AI import generate_chat_response
-from Summary_AI import summarize_conversation
+from core.Chat_AI import generate_chat_response
+from Speech_To_Text import speech_to_text
+from core.Summary_AI import summarize_conversation
+from core.file_service import download_audio, upload_audio
+from core.summary_service import record_summary_to_db
 from db import SessionDep, init_db
-from file_service import download_audio, upload_audio
-from summary_service import record_summary_to_db
+
+
+# Configure logging
+logging.basicConfig(
+    level=logging.DEBUG,  # Set to DEBUG to capture detailed logs
+    format="%(asctime)s - %(levelname)s - %(message)s",
+)
 
 
 @asynccontextmanager
@@ -56,13 +65,21 @@ async def summarize(request: SummaryRequest):
 
 
 @app.post("/upload")
-async def upload(file: UploadFile = File(...)):
-    return upload_audio(file)
+async def upload(session: SessionDep, file: UploadFile = File(...)):
+    upload_result = await upload_audio(file)
+    transcript = await speech_to_text(upload_result["filename"])
+
+    response = generate_chat_response(transcript)
+    summary = summarize_conversation(transcript)
+
+    record_summary_to_db(session, summary)
+
+    return {"response": response}
 
 
 @app.get("/download/{filename}")
 async def download(filename: str):
-    return download_audio(filename)
+    return await download_audio(filename)
 
 
 @app.get("/")
