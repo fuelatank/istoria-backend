@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 import websocket
 import json
 import base64
@@ -7,10 +8,10 @@ import datetime
 import os
 from urllib.parse import urlencode
 
-# 配置信息
-APPID = "b340711c"
-APIKey = "988e898fd5dc687c32ff10aab6ca5cda"
-APISecret = "M2YwM2VjOTRlYWE0Y2E2YmJjNDIxZmRl"
+load_dotenv()
+APPID = os.getenv("XF_API_ID")
+APIKey = os.getenv("XF_API_KEY")
+APISecret = os.getenv("XF_API_SECRET")
 
 
 # 生成鉴权url

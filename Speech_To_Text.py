@@ -1,6 +1,7 @@
 import os
 import logging
 import ssl
+from dotenv import load_dotenv
 from fastapi import HTTPException
 import websocket
 import json
@@ -11,10 +12,10 @@ import datetime
 import threading
 from urllib.parse import urlencode
 
-# 配置信息
-APPID = "b340711c"
-APIKey = "988e898fd5dc687c32ff10aab6ca5cda"
-APISecret = "M2YwM2VjOTRlYWE0Y2E2YmJjNDIxZmRl"
+load_dotenv()
+APPID = os.getenv("XF_API_ID")
+APIKey = os.getenv("XF_API_KEY")
+APISecret = os.getenv("XF_API_SECRET")
 
 
 # 生成鉴权url
@@ -145,7 +146,9 @@ async def speech_to_text(file_name: str) -> str:
         with open(file_path, "rb") as f:
             audio_data = f.read()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error reading audio file: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Error reading audio file: {str(e)}"
+        )
 
     result_container = {"text": "", "error": None}
 
